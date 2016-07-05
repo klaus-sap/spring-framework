@@ -65,6 +65,7 @@ import org.springframework.web.servlet.handler.AbstractHandlerMethodExceptionRes
  * {@link #setArgumentResolvers} and {@link #setReturnValueHandlers(List)}.
  *
  * @author Rossen Stoyanchev
+ * @author Juergen Hoeller
  * @since 3.1
  */
 public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExceptionResolver
@@ -264,11 +265,15 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 			ExceptionHandlerMethodResolver resolver = new ExceptionHandlerMethodResolver(adviceBean.getBeanType());
 			if (resolver.hasExceptionMappings()) {
 				this.exceptionHandlerAdviceCache.put(adviceBean, resolver);
-				logger.info("Detected @ExceptionHandler methods in " + adviceBean);
+				if (logger.isInfoEnabled()) {
+					logger.info("Detected @ExceptionHandler methods in " + adviceBean);
+				}
 			}
 			if (ResponseBodyAdvice.class.isAssignableFrom(adviceBean.getBeanType())) {
 				this.responseBodyAdvice.add(adviceBean);
-				logger.info("Detected ResponseBodyAdvice implementation in " + adviceBean);
+				if (logger.isInfoEnabled()) {
+					logger.info("Detected ResponseBodyAdvice implementation in " + adviceBean);
+				}
 			}
 		}
 	}
@@ -364,10 +369,10 @@ public class ExceptionHandlerExceptionResolver extends AbstractHandlerMethodExce
 			if (logger.isDebugEnabled()) {
 				logger.debug("Invoking @ExceptionHandler method: " + exceptionHandlerMethod);
 			}
-			if (exception.getCause() != null) {
-				// Expose root cause as provided argument as well
-				exceptionHandlerMethod.invokeAndHandle(
-						webRequest, mavContainer, exception, exception.getCause(), handlerMethod);
+			Throwable cause = exception.getCause();
+			if (cause != null) {
+				// Expose cause as provided argument as well
+				exceptionHandlerMethod.invokeAndHandle(webRequest, mavContainer, exception, cause, handlerMethod);
 			}
 			else {
 				// Otherwise, just the given exception as-is
